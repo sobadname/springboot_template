@@ -1,0 +1,118 @@
+package com.tykj.start.service.account;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.tykj.start.domain.Role;
+import com.tykj.start.domain.User;
+import com.tykj.start.repository.RoleRepository;
+import com.tykj.start.repository.UserRepository;
+import com.tykj.start.security.utils.SecurityUtils;
+import com.tykj.start.service.mail.MailService;
+import com.tykj.start.service.redis.RedisService;
+import com.tykj.start.utils.BeanMapper;
+import com.tykj.start.utils.Constants;
+import com.tykj.start.utils.StringUtils;
+
+@Service
+public class AccountService {
+
+	@Autowired
+	private RoleRepository roleRepository;
+
+	@Autowired
+	private UserRepository userRepository;
+
+	@Autowired
+	private MailService mailService;
+
+	@Autowired
+	private RedisService redisService;
+
+	public List<Role> getAllRole() {
+		return BeanMapper.mapList(roleRepository.findAll(), Role.class);
+	}
+
+	public List<User> getAllUser() {
+		return BeanMapper.mapList(userRepository.findAll(), User.class);
+	}
+
+	public User getUserByUserName(String username) {
+		return userRepository.findByLoginName(username);
+	}
+
+	public User getUserByEmail(String email) {
+		return userRepository.findByEmail(email);
+	}
+
+	public void saveUser(User user) {
+		userRepository.save(user);
+	}
+
+	public void register(User user, MultipartFile user_profile_file) throws IOException {
+		user.setId(null);
+		user.setCreateTime(new Date());
+		user.setPassword(SecurityUtils.encoderPassword(user.getPlainPassword()));
+		user.setUserProfile(saveUserProfile(user_profile_file));
+		saveUser(user);
+	}
+
+	private String saveUserProfile(MultipartFile user_profile_file) throws IOException {
+		if (user_profile_file == null) {
+			return null;
+		}
+		String tempName = System.currentTimeMillis()
+				+ StringUtils.getFileNameExt(user_profile_file.getOriginalFilename());
+		String saveUrl = Constants.getUserProfilePath() + File.separator + tempName;
+		File tempFile = new File(saveUrl);
+		user_profile_file.transferTo(tempFile);
+		return saveUrl;
+	}
+
+	public void sendPasswordFindMail(String email) throws Exception {
+		User user = getUserByEmail(email);
+		String uuid = StringUtils.getUUID();
+		mailService.sendPasswordFindMail(email, user.getName(), Constants.MAIL_PASSWORD_FIND_LINKURL_PRI + "/" + uuid);
+		redisService.setPasswordFindMail(uuid, email, 60 * 60 * 48);
+	}
+
+	public String getPasswordFindEmail(String uuid) {
+		return redisService.getPasswordFindMail(uuid);
+	}
+
+	public void savePasswordFind(String uuid, String password) {
+		String email = getPasswordFindEmail(uuid);
+		User user = getUserByEmail(email);
+		user.setPassword(SecurityUtils.encoderPassword(password));
+		saveUser(user);
+	}
+
+	public void enableUser(String username) {
+		User user = getUserByUserName(username);
+		if (user != null) {
+			user.setStatus(Constants.USER_STATUS_ENABLE);
+		}
+		saveUser(user);
+	}
+
+	public void disableUser(String username) {
+		User user = getUserByUserName(username);
+		if (user != null) {
+			user.setStatus(Constants.USER_STATUS_DISABLE);
+		}
+		saveUser(user);
+	}
+
+	public void registerUser(User user) {
+		user.setPassword(SecurityUtils.encoderPassword(user.getPlainPassword()));
+		user.setCreateTime(new Date());
+		user.setStatus(1);
+		userRepository.save(user);
+	}
+}

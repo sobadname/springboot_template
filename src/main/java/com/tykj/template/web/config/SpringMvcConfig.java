@@ -1,0 +1,33 @@
+package com.tykj.template.web.config;
+
+import org.springframework.boot.context.embedded.ConfigurableEmbeddedServletContainer;
+import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
+import org.springframework.boot.web.servlet.ErrorPage;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+
+@Configuration
+public class SpringMvcConfig extends WebMvcConfigurerAdapter implements EmbeddedServletContainerCustomizer {
+	@Override
+	public void addViewControllers(ViewControllerRegistry registry) {
+		registry.addRedirectViewController("/", "/index");
+		registry.addViewController("/index").setViewName("index");
+		registry.addViewController("/login").setViewName("login");
+		registry.addViewController("/register").setViewName("sys/register");
+		registry.addViewController("/password/find").setViewName("sys/password_find");
+		registry.addViewController("/page/404").setViewName("page/404");
+		registry.addViewController("/page/500").setViewName("page/500");
+		registry.addViewController("/page/403").setViewName("page/403");
+		registry.addViewController("/page/400").setViewName("page/400");
+	}
+
+	@Override
+	public void customize(ConfigurableEmbeddedServletContainer container) {
+		container.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/page/404"));
+		container.addErrorPages(new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/page/500"));
+		container.addErrorPages(new ErrorPage(HttpStatus.BAD_REQUEST, "/page/400"));
+	}
+
+}

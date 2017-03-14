@@ -1,0 +1,86 @@
+package com.tykj.template.service.mail;
+
+import java.io.File;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.mail.internet.MimeMessage;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
+
+import com.tykj.template.utils.Constants;
+
+import freemarker.template.Configuration;
+
+@Service
+@Async
+public class MailService {
+
+	@Autowired
+	private JavaMailSender mailSender;
+
+	@Autowired
+	private Configuration configuration;
+
+	@Value("${spring.mail.username}")
+	private String username;
+
+	public void sendMail(String to, String subject, String content) throws Exception {
+		SimpleMailMessage mail = new SimpleMailMessage();
+		mail.setFrom(username);
+		mail.setTo(to);
+		mail.setSubject(subject);
+		mail.setText(content);
+		mailSender.send(mail);
+	}
+
+	public void sendMail(String toes[], String subject, String content) throws Exception {
+		for (String to : toes) {
+			sendMail(to, subject, content);
+		}
+	}
+
+	public void sendMimeMail(String to, String subject, String content, File[] files) throws Exception {
+		MimeMessage mimeMessage = mailSender.createMimeMessage();
+		MimeMessageHelper mimeMessageHelper = new MimeMessageHelper(mimeMessage, true);
+		mimeMessageHelper.setFrom(username);
+		mimeMessageHelper.setTo(to);
+		mimeMessageHelper.setSubject(subject);
+		mimeMessageHelper.setText(content, true);
+		if (files != null) {
+			for (File file : files) {
+				mimeMessageHelper.addAttachment(file.getName(), file);
+			}
+		}
+		mailSender.send(mimeMessage);
+	}
+
+	public void sendMimeMail(String toes[], String subject, String content, File[] files) throws Exception {
+		for (String to : toes) {
+			sendMimeMail(to, subject, content, files);
+		}
+	}
+
+	public void sendTemplateMail(String to, String subject, String templateLocation, Map<String, Object> model)
+			throws Exception {
+		String text = FreeMarkerTemplateUtils.processTemplateIntoString(configuration.getTemplate(templateLocation),
+				model);
+		sendMimeMail(to, subject, text, null);
+	}
+
+	public void sendPasswordFindMail(String to, String username, String link_url) throws Exception {
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("username", username);
+		map.put("submit_time", new Date());
+		map.put("link_url", link_url);
+		sendTemplateMail(to, Constants.MAIL_PASSWORD_FIND_SUBJECT, Constants.MAIL_PASSWORD_FIND_TEMPLATELOCATION, map);
+	}
+}

@@ -1,0 +1,173 @@
+package com.tykj.start.security.service;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.PostConstruct;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.ConfigAttribute;
+import org.springframework.security.access.SecurityConfig;
+import org.springframework.stereotype.Service;
+
+import com.tykj.start.domain.Permission;
+import com.tykj.start.domain.Role;
+import com.tykj.start.domain.User;
+import com.tykj.start.security.utils.SecurityUtils;
+import com.tykj.start.service.account.AccountService;
+
+@Service
+public class SecurityAuthorityService {
+
+	private Logger logger = LoggerFactory.getLogger(SecurityAuthorityService.class);
+
+	private static Map<String, Collection<ConfigAttribute>> permissionRole = null;
+
+	private static Map<String, Collection<Permission>> userPermission = null;
+
+	@Autowired
+	private AccountService accountService;
+
+	public User getUserByUserName(String username) {
+		return accountService.getUserByUserName(username);
+	}
+
+	public void updateUserLastLoginTime(String uername) {
+		User user = getUserByUserName(uername);
+		if (user != null) {
+			user.setLastLoginTime(new Date());
+			accountService.saveUser(user);
+		}
+	}
+
+	public Map<String, Collection<ConfigAttribute>> getPermissionRole() {
+		if (permissionRole == null) {
+			synchronized (SecurityAuthorityService.class) {
+				if (permissionRole == null) {
+					loadPermissionRole();
+				}
+			}
+		}
+		return permissionRole;
+	}
+
+	public void reloadPermissionRole() {
+		loadPermissionRole();
+	}
+
+	@PostConstruct
+	private void loadPermissionRole() {
+		permissionRole = new HashMap<String, Collection<ConfigAttribute>>();
+		List<Role> roles = accountService.getAllRole();
+		if (roles != null) {
+			for (Role role : roles) {
+				List<Permission> perms = role.getPermissionList();
+				if (perms != null) {
+					ConfigAttribute attr = new SecurityConfig(role.getName());
+					for (Permission perm : perms) {
+						String url = perm.getUrl();
+						if (permissionRole.containsKey(url)) {
+							Collection<ConfigAttribute> attrs = permissionRole.get(url);
+							attrs.add(attr);
+							permissionRole.put(url, attrs);
+						} else {
+							Collection<ConfigAttribute> attrs = new ArrayList<ConfigAttribute>();
+							attrs.add(attr);
+							permissionRole.put(url, attrs);
+						}
+					}
+				}
+			}
+		}
+		logger.info("security load permission role from mysql: " + permissionRole);
+	}
+
+	public Collection<Permission> getUserPermissionByUserName(String username) {
+		if (userPermission == null) {
+			synchronized (SecurityAuthorityService.class) {
+				if (userPermission == null) {
+					loadUserPermission();
+				}
+			}
+		}
+		return userPermission.get(username);
+	}
+
+	public void reloadUserPermission() {
+		loadUserPermission();
+	}
+
+	public void reloadUserPermission(User user) {
+		loadUserPermission(user);
+	}
+
+	@PostConstruct
+	private void loadUserPermission() {
+		userPermission = new HashMap<String, Collection<Permission>>();
+		List<User> users = accountService.getAllUser();
+		if (users != null) {
+			for (User user : users) {
+				loadUserPermission(user);
+			}
+		}
+	}
+
+	private void loadUserPermission(User user) {
+		if (userPermission == null) {
+			userPermission = new HashMap<String, Collection<Permission>>();
+		}
+		userPermission.put(user.getLoginName(), new ArrayList<Permission>());
+		Map<Long, Permission> map = new HashMap<Long, Permission>();
+		List<Permission> perms = getUserPermissionSorted(user);
+		for (Permission perm : perms) {
+			if (perm.getParentId().longValue() == SecurityUtils.PERMISSION_ROOT_ID.longValue()) {
+				userPermission.get(user.getLoginName()).add(perm);
+			}
+			if (map.containsKey(perm.getParentId().longValue())) {
+				Permission parent = map.get(perm.getParentId().longValue());
+				perm.setParent(parent);
+				List<Permission> children = parent.getChildren();
+				if (children == null) {
+					children = new ArrayList<Permission>();
+				}
+				children.add(perm);
+			} else {
+				map.put(perm.getId().longValue(), perm);
+			}
+		}
+		logger.info("security load user[" + user.getLoginName() + "] permission from mysql: "
+				+ userPermission.get(user.getLoginName()));
+	}
+
+	private List<Permission> getUserPermissionSorted(User user) {
+		List<Permission> user_perm = null;
+		List<Role> roles = user.getRoleList();
+		if (roles != null) {
+			user_perm = new ArrayList<Permission>();
+			Set<Long> set = new HashSet<Long>();
+			for (Role role : roles) {
+				List<Permission> perms = role.getPermissionList();
+				if (perms != null) {
+					for (Permission perm : perms) {
+						if (!set.contains(perm.getId())) {
+							user_perm.add(perm);
+							set.add(perm.getId());
+						}
+					}
+				}
+			}
+			Collections.sort(user_perm);
+		}
+		return user_perm;
+	}
+
+}

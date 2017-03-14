@@ -1,0 +1,31 @@
+package com.tykj.start.web;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.tykj.start.domain.User;
+import com.tykj.start.service.account.AccountService;
+
+@Controller
+public class TestController {
+	
+	@Autowired
+	private AccountService accountService;
+	
+	@RequestMapping(value="/test",method=RequestMethod.GET)
+
+	public String test(){
+		User user=new User();
+		user.setLoginName("user");
+		user.setPlainPassword("user");
+		user.setEmail("123@qq.com");
+		user.setName("姓名");
+		accountService.saveUser(user);
+		return "test";
+	}
+
+}

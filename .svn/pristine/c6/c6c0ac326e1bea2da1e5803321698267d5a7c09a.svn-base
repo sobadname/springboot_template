@@ -1,0 +1,101 @@
+package com.tykj.template.security.service;
+
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.ConfigAttribute;
+import org.springframework.security.web.FilterInvocation;
+import org.springframework.security.web.access.intercept.FilterInvocationSecurityMetadataSource;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.stereotype.Service;
+
+import com.tykj.template.dto.PermissionDto;
+import com.tykj.template.security.utils.SecurityUtils;
+
+@Service
+public class SecurityMetadataSourceService implements FilterInvocationSecurityMetadataSource {
+
+	private Logger logger = LoggerFactory.getLogger(SecurityMetadataSourceService.class);
+
+	@Autowired
+	private SecurityAuthorityService securityAuthorityService;
+
+	@Override
+	public Collection<ConfigAttribute> getAllConfigAttributes() {
+		return null;
+	}
+
+	@Override
+	public Collection<ConfigAttribute> getAttributes(Object object) throws IllegalArgumentException {
+		FilterInvocation filterInvocation = (FilterInvocation) object;
+		Map<String, Collection<ConfigAttribute>> resourceMap = securityAuthorityService.getPermissionRole();
+		if (resourceMap != null) {
+			Iterator<String> iter = resourceMap.keySet().iterator();
+			while (iter.hasNext()) {
+				String rescUrl = iter.next();
+				RequestMatcher requestMatcher = new AntPathRequestMatcher(rescUrl);
+				if (requestMatcher.matches(filterInvocation.getHttpRequest())) {
+					@SuppressWarnings("unchecked")
+					Collection<PermissionDto> perms = (List<PermissionDto>) filterInvocation.getHttpRequest().getSession()
+							.getAttribute(SecurityUtils.SESSION_USER_PERMISSION);
+					resetPermissionActive(perms);
+					boolean actived = setPermissionActive(perms, rescUrl);
+					if (!actived && perms != null) {
+						PermissionDto perm = perms.iterator().next();
+						if (perm != null) {
+							perm.setActive(true);
+						}
+					}
+					logger.info("security request url: " + object + ", authentication: " + resourceMap.get(rescUrl));
+					return resourceMap.get(rescUrl);
+				}
+			}
+		}
+		logger.info("security request url: " + object + ", whitelist");
+		// tudo blacklist
+		return null;
+	}
+
+	private boolean setPermissionActive(Collection<PermissionDto> perms, String rescUrl) {
+		if (perms == null) {
+			return false;
+		}
+		for (PermissionDto perm : perms) {
+			if (perm.getUrl().equalsIgnoreCase(rescUrl)) {
+				perm.setActive(true);
+				PermissionDto temp = perm.getParent();
+				while (temp != null) {
+					temp.setActive(true);
+					temp = temp.getParent();
+				}
+				return true;
+			}
+			if (setPermissionActive(perm.getChildren(), rescUrl)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void resetPermissionActive(Collection<PermissionDto> perms) {
+		if (perms == null) {
+			return;
+		}
+		for (PermissionDto perm : perms) {
+			perm.setActive(false);
+			resetPermissionActive(perm.getChildren());
+		}
+	}
+
+	@Override
+	public boolean supports(Class<?> c) {
+		return true;
+	}
+
+}
