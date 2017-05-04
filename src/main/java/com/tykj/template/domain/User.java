@@ -121,6 +121,14 @@ public class User extends IdEntity {
 		this.lastLoginTime = lastLoginTime;
 	}
 
+	public String getTel() {
+		return tel;
+	}
+
+	public void setTel(String tel) {
+		this.tel = tel;
+	}
+
 	@Override
 	public String toString() {
 		return "User [loginName=" + loginName + ", plainPassword=" + plainPassword + ", password=" + password

@@ -1,0 +1,125 @@
+package com.tykj.template.domain.dsyg;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
+import javax.persistence.Table;
+
+import com.tykj.template.domain.IdEntity;
+
+@Entity
+@Table(name = "dsyg_item")
+public class DsygItem extends IdEntity {
+
+	public DsygItem() {
+
+	}
+
+	public DsygItem(long id) {
+		this.id = id;
+	}
+
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "catalog_id")
+	private DsygCatalog catalog;
+	private String name;
+	private String icon;
+	private String iconFile;
+	private String content;
+	private double price;
+	private String stage;
+	private int status;
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	@JoinColumn(name = "item_id")
+	@OrderBy(value = "show_order asc")
+	private List<DsygItemPic> picList;
+	private Date createTime;
+
+	public DsygCatalog getCatalog() {
+		return catalog;
+	}
+
+	public void setCatalog(DsygCatalog catalog) {
+		this.catalog = catalog;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getIcon() {
+		return icon;
+	}
+
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
+
+	public String getContent() {
+		return content;
+	}
+
+	public void setContent(String content) {
+		this.content = content;
+	}
+
+	public double getPrice() {
+		return price;
+	}
+
+	public void setPrice(double price) {
+		this.price = price;
+	}
+
+	public String getStage() {
+		return stage;
+	}
+
+	public void setStage(String stage) {
+		this.stage = stage;
+	}
+
+	public int getStatus() {
+		return status;
+	}
+
+	public void setStatus(int status) {
+		this.status = status;
+	}
+
+	public Date getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(Date createTime) {
+		this.createTime = createTime;
+	}
+
+	public List<DsygItemPic> getPicList() {
+		return picList;
+	}
+
+	public void setPicList(List<DsygItemPic> picList) {
+		this.picList = picList;
+	}
+
+	public String getIconFile() {
+		return iconFile;
+	}
+
+	public void setIconFile(String iconFile) {
+		this.iconFile = iconFile;
+	}
+
+}

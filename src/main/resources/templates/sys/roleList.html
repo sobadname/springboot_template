@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="layouts">
+<head>
+<title>角色列表</title>
+</head>
+<body>
+	<div layout:fragment="page-heading">
+		<div class="col-lg-8">
+			<h2>角色列表</h2>
+			<ol class="breadcrumb">
+				<li><a href="/index">立</a></li>
+				<li>系统管理</li>
+				<li class="active"><strong>角色列表</strong></li>
+			</ol>
+		</div>
+	</div>
+	<div layout:fragment="page-content">
+		<div class="row">
+			<div class="col-lg-12">
+				<div class="ibox float-e-margins">
+					<div class="ibox-title">
+						<h5>点击标题进行排序，点击每行展开显示更多内容</h5>
+						<div class="ibox-tools">
+							<a href="#" data-toggle="modal" data-target="#permModal"
+								class="btn btn-primary btn-xs">新角色</a> <a class="collapse-link">
+								<i class="fa fa-chevron-up"></i>
+							</a> <a class="close-link"> <i class="fa fa-times"></i>
+							</a>
+						</div>
+					</div>
+					<div class="ibox-content">
+						<input type="text" class="form-control input-sm m-b-xs"
+							id="filter" placeholder="搜索">
+						<table class="footable table table-stripped toggle-arrow-tiny"
+							data-page-size="8" data-filter=#filter>
+							<thead>
+								<tr>
+									<th>名称</th>
+									<th data-hide="all">ID</th>
+									<th>状态</th>
+									<th>创建时间</th>
+									<th>操作</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="role,st : ${roles}">
+									<td th:text="${role.name}">Liaoyongjun</td>
+									<td th:text="${role.id}">1</td>
+									<td><span
+										th:class="${role.status} == 1 ? 'label label-primary':'label label-danger'"
+										th:text="${role.status} == 1 ? '正常':'已禁用'"
+										class="label label-primary">正常</span></td>
+									<td th:text="${role.createTime}">2016-01-01 03:23:45</td>
+									<td class="text-left">
+										<div class="btn-group">
+											<button class="btn btn-default btn-xs" type="button"
+												th:onclick="'updateRole('+'\''+${role.name}+'\''+')'">
+												<i class="fa fa-legal">权限</i>
+											</button>
+											<button class="btn btn-default btn-xs" type="button"
+												th:onclick="${role.status} == 1 ? 'disableRole('+'\''+${role.name}+'\''+')':'enableRole('+'\''+${role.name}+'\''+')'">
+												<i th:text="${role.status} == 1 ? '禁用':'启用'"
+													th:class="${role.status} == 1 ? 'fa fa-lock':'fa fa-unlock'"
+													class="fa fa-unlock">禁用</i>
+											</button>
+										</div>
+									</td>
+								</tr>
+							</tbody>
+							<tfoot>
+								<tr>
+									<td colspan="6">
+										<ul class="pagination pull-right"></ul>
+									</td>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+		<form method="post" id="role_form" class="form-horizontal"
+			th:action="@{/sys/role/create}" action="/sys/role/create" role="form">
+			<div class="modal inmodal" id="permModal" tabindex="-1" role="dialog"
+				aria-hidden="true">
+				<div class="modal-dialog modal-sm">
+					<div class="modal-content animated flipInY">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal">
+								<span aria-hidden="true">&times;</span><span class="sr-only">关闭</span>
+							</button>
+							<h4 class="modal-title">新角色</h4>
+							<small class="font-bold">输入角色名.</small>
+						</div>
+						<div class="modal-body">
+							<div class="form-group">
+								<input type="text" class="form-control" name="rolename"
+									id="rolename" placeholder="角色名" remote="/sys/checkRolename" maxlength="20" required="true">
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-white" data-dismiss="modal">关闭</button>
+							<button type="submit" class="btn btn-primary">提交</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+	<!-- Page-Level Scripts -->
+	<script layout:fragment="page-script" th:inline="javascript">
+		$(document).ready(function() {
+			$('.footable').footable();
+			$('#permModal').on('show.bs.modal', function(e) {
+				$('#rolename').val("");
+			});
+			$("#role_form").validate({
+				messages : {
+					rolename : {
+						remote : "该角色名已存在"
+					}
+				}
+			});
+		});
+		function swalRole(name, hrefurl, txt) {
+			swal({
+				title : "你确定吗?",
+				text : txt,
+				type : "warning",
+				showCancelButton : true,
+				confirmButtonColor : "#DD6B55",
+				confirmButtonText : "是的，我确定!",
+				cancelButtonText : "不，我再想想!",
+				closeOnConfirm : true,
+				closeOnCancel : true
+			}, function(isConfirm) {
+				if (isConfirm) {
+					location.href = hrefurl;
+				}
+			});
+		}
+		function disableRole(name) {
+			swalRole(name, "disable/" + name,
+					"你的操作将禁止该角色，任何关联该角色的人员将失去该角色具有的权限!");
+		}
+		function enableRole(name) {
+			swalRole(name, "enable/" + name,
+					"你的操作将重新启用该角色，任何关联该角色的人员将获得该角色具有的权限!");
+		}
+		function updateRole(name) {
+			location.href = "update/" + name;
+		}
+		/*[# th:if="${param.perm}"]*/
+		toastr.success('更改成功!', '角色权限');
+		/*[/]*/
+		/*[# th:if="${param.role}"]*/
+		toastr.success('新建成功!', '角色');
+		/*[/]*/
+		/*[# th:if="${param.disable}"]*/
+		toastr.success('禁用成功!', '角色');
+		/*[/]*/
+		/*[# th:if="${param.enable}"]*/
+		toastr.success('启用成功!', '角色');
+		/*[/]*/
+	</script>
+</body>
+</html>

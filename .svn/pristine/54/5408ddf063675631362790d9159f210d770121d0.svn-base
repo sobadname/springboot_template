@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="layouts">
+<head>
+<title>商品列表</title>
+</head>
+<body>
+	<div layout:fragment="page-heading">
+		<div class="col-lg-8">
+			<h2>商品列表</h2>
+			<ol class="breadcrumb">
+				<li><a href="/index">立</a></li>
+				<li>商品管理</li>
+				<li class="active"><strong>商品列表</strong></li>
+			</ol>
+		</div>
+	</div>
+	<div layout:fragment="page-content">
+		<div class="row">
+			<div class="col-lg-12">
+				<div class="ibox float-e-margins">
+					<div class="ibox-title">
+						<h5>点击标题进行排序，点击每行展开显示更多内容</h5>
+						<div class="ibox-tools">
+							<a th:href="@{/dsyg/item/new}" href="/new" class="btn btn-primary btn-xs">新商品</a>
+							<a class="collapse-link"> <i class="fa fa-chevron-up"></i>
+							</a>
+						</div>
+					</div>
+					<div class="ibox-content">
+						<input type="text" class="form-control input-sm m-b-xs"
+							id="filter" placeholder="搜索">
+						<table class="footable table table-stripped toggle-arrow-tiny"
+							data-page-size="8" data-filter=#filter>
+							<thead>
+								<tr>
+									<th></th>
+									<th>名称</th>
+									<th>分类</th>
+									<th>来源</th>
+									<th>价格</th>
+									<th data-hide="all">ID</th>
+									<th data-hide="all">图片</th>
+									<th>创建时间</th>
+									<th>状态</th>
+									<th>操作</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="data,st : ${lists}">
+									<td>
+									<img alt="image" class="img" height="48px"
+									th:src="@{${data.icon}}" src="../static/image/profile/profile.jpg" />
+									</td>
+									<td><a th:href="@{'/dsyg/item/details/'+${data.id}}" th:text="${data.name}"></a></td>
+									<td th:text="${data.catalog.name}">tv自营</td>
+									<td th:text="${data.stage}">唯品会</td>
+									<td th:text="${data.price}">1.0元</td>
+									<td th:text="${data.id}">1</td>
+									<td>
+									<img th:each="pic,pst : ${data.picList}" alt="image" class="file" height="48px"
+									th:src="@{${pic.linkUrl}}" src="../static/image/profile/profile.jpg" />
+									</td>
+									<td th:text="${data.createTime}">2016-01-01 03:23:45</td>
+									<td><span
+										th:class="${data.status} == 1 ? 'label label-primary':'label label-danger'"
+										th:text="${data.status} == 1 ? '上架':'下架'"
+										class="label label-primary">上架</span></td>
+									<td class="text-left">
+										<div class="btn-group">
+											<button class="btn btn-default btn-xs" type="button" th:onclick="${'updateData('+data.id+')'}">
+												<i class="fa fa-pencil">修改</i>
+											</button>
+											<button class="btn btn-default btn-xs" type="button"
+												th:onclick="${data.status} == 1 ? 'disableData('+'\''+${data.id}+'\''+')':'enableData('+'\''+${data.id}+'\''+')'">
+												<i th:text="${data.status} == 1 ? '下架':'上架'"
+													th:class="${data.status} == 1 ? 'fa fa-arrow-circle-o-down':'fa fa-arrow-circle-o-up'"
+													class="fa fa-arrow-circle-o-down">下架</i>
+											</button>
+										</div>
+									</td>
+								</tr>
+							</tbody>
+							<tfoot>
+								<tr>
+									<td colspan="8">
+										<ul class="pagination pull-right"></ul>
+									</td>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Page-Level Scripts -->
+	<script layout:fragment="page-script" th:inline="javascript">
+		$(document).ready(function() {
+	        $('.footable').footable();
+	    });
+        function swalData(id,hrefurl,txt){
+        	swal({
+                title: "你确定吗?",
+                text: txt,
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                confirmButtonText: "是的，我确定!",
+                cancelButtonText: "不，我再想想!",
+                closeOnConfirm: true,
+                closeOnCancel: true },
+            function (isConfirm) {
+                if (isConfirm) {
+                    location.href=hrefurl;
+                }
+            });
+        }
+        function disableData (id) {
+        	swalData(id,"disable/"+id,"你的操作将下架该商品!");
+        }
+        function enableData (id) {
+        	swalData(id,"enable/"+id,"你的操作将上架该商品!");
+        }
+        function updateData (id){
+        	location.href="update/"+id;
+        }
+        
+        /*[# th:if="${param.disable}"]*/
+        toastr.success('下架成功!','商品状态');
+        /*[/]*/
+         /*[# th:if="${param.enable}"]*/
+        toastr.success('上架成功!','商品状态');
+        /*[/]*/
+    </script>
+</body>
+</html>

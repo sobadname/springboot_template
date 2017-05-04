@@ -7,11 +7,15 @@ import java.util.regex.Pattern;
 public class StringUtils extends org.springframework.util.StringUtils {
 
 	public static void main(String[] args) {
-		System.out.println(getLoginUrlFromEmail("asd@qq.com"));
+		System.out.println(getUUIDWithOutLine());
 	}
 
 	public static String getUUID() {
 		return UUID.randomUUID().toString();
+	}
+	
+	public static String getUUIDWithOutLine() {
+		return getUUID().replaceAll("-", "");
 	}
 
 	public static String getLoginUrlFromEmail(String email) {

@@ -1,0 +1,51 @@
+package com.tykj.template.domain.dsyg;
+
+import java.util.Date;
+
+import javax.persistence.Entity;
+import javax.persistence.Table;
+
+import com.tykj.template.domain.IdEntity;
+
+@Entity
+@Table(name = "dsyg_item_pic")
+public class DsygItemPic extends IdEntity {
+
+	private String linkUrl;
+	private String fileUrl;
+	private int showOrder;
+	private Date createTime;
+
+	public String getLinkUrl() {
+		return linkUrl;
+	}
+
+	public void setLinkUrl(String linkUrl) {
+		this.linkUrl = linkUrl;
+	}
+
+	public String getFileUrl() {
+		return fileUrl;
+	}
+
+	public void setFileUrl(String fileUrl) {
+		this.fileUrl = fileUrl;
+	}
+
+	public Date getCreateTime() {
+		return createTime;
+	}
+
+	public void setCreateTime(Date createTime) {
+		this.createTime = createTime;
+	}
+
+	public int getShowOrder() {
+		return showOrder;
+	}
+
+	public void setShowOrder(int showOrder) {
+		this.showOrder = showOrder;
+	}
+
+}

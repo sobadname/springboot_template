@@ -1,0 +1,31 @@
+package com.tykj.template.service.dsyg;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.tykj.template.domain.dsyg.DsygCatalog;
+import com.tykj.template.domain.dsyg.DsygItem;
+import com.tykj.template.repository.dsyg.DsygCatalogRepository;
+import com.tykj.template.repository.dsyg.DsygItemRepository;
+import com.tykj.template.utils.BeanMapper;
+
+@Service
+public class DsygApiService {
+
+	@Autowired
+	private DsygItemRepository itemRepository;
+
+	@Autowired
+	private DsygCatalogRepository catalogRepository;
+
+	public List<DsygItem> getItemByIdCatalogId(long id) {
+		return itemRepository.getDsygItemByCatalogId(id);
+	}
+
+	public List<DsygCatalog> getAllCatalog() {
+		return BeanMapper.mapList(catalogRepository.findAll(), DsygCatalog.class);
+	}
+
+}

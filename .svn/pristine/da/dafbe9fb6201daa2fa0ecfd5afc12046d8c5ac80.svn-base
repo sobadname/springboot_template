@@ -1,0 +1,22 @@
+package com.tykj.template.domain.dsyg;
+
+import javax.persistence.Entity;
+import javax.persistence.Table;
+
+import com.tykj.template.domain.IdEntity;
+
+@Entity
+@Table(name = "dsyg_stage")
+public class DsygStage extends IdEntity {
+
+	private String name;
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+}

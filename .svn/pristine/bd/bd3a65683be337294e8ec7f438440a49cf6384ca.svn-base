@@ -1,0 +1,187 @@
+package com.tykj.template.service.dsyg;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.tykj.template.domain.dsyg.DsygCatalog;
+import com.tykj.template.domain.dsyg.DsygItem;
+import com.tykj.template.domain.dsyg.DsygItemPic;
+import com.tykj.template.domain.dsyg.DsygPage;
+import com.tykj.template.domain.dsyg.DsygStage;
+import com.tykj.template.repository.dsyg.DsygCatalogRepository;
+import com.tykj.template.repository.dsyg.DsygItemRepository;
+import com.tykj.template.repository.dsyg.DsygPageRepository;
+import com.tykj.template.repository.dsyg.DsygStageRepository;
+import com.tykj.template.utils.BeanMapper;
+import com.tykj.template.utils.Constants;
+import com.tykj.template.utils.StringUtils;
+
+@Service
+public class DsygItemService {
+
+	@Autowired
+	private DsygItemRepository itemRepository;
+
+	@Autowired
+	private DsygStageRepository stageRepository;
+
+	@Autowired
+	private DsygCatalogRepository catalogRepository;
+
+	@Autowired
+	private DsygPageRepository pageRepository;
+
+	@Value("${sys.tykj.domain}")
+	private String domain;
+
+	@Value("${random.uuid}")
+	private String random_uuid;
+
+	public List<DsygItem> getAllItem() {
+		return BeanMapper.mapList(itemRepository.findAll(), DsygItem.class);
+	}
+
+	public List<DsygCatalog> getAllCatalog() {
+		return BeanMapper.mapList(catalogRepository.findAll(), DsygCatalog.class);
+	}
+
+	public List<DsygStage> getAllStage() {
+		return BeanMapper.mapList(stageRepository.findAll(), DsygStage.class);
+	}
+
+	public DsygItem getItemById(long id) {
+		return itemRepository.findOne(id);
+	}
+
+	@PreAuthorize("hasAuthority('管理员')")
+	public void enableItem(long id) {
+		DsygItem item = getItemById(id);
+		if (item != null) {
+			item.setStatus(Constants.STATUS_ENABLE);
+		}
+		saveItem(item);
+	}
+
+	@PreAuthorize("hasAuthority('管理员')")
+	public void disableItem(long id) {
+		DsygItem item = getItemById(id);
+		if (item != null) {
+			item.setStatus(Constants.STATUS_DISABLE);
+		}
+		saveItem(item);
+	}
+
+	public void saveItem(DsygItem item) {
+		itemRepository.save(item);
+	}
+
+	public void saveItem(DsygItem item, MultipartFile iconImage, long[] picId, MultipartFile[] picImage,
+			int[] picOrder) {
+		Date createTime = new Date();
+		DsygItem saveItem = null;
+		if (item.getId() != null && item.getId() != 0) {
+			saveItem = getItemById(item.getId());
+			saveItem.setName(item.getName());
+			saveItem.setPrice(item.getPrice());
+			saveItem.setCatalog(item.getCatalog());
+			saveItem.setContent(item.getContent());
+			saveItem.setStage(item.getStage());
+		} else {
+			saveItem = item;
+			saveItem.setCreateTime(createTime);
+			saveItem.setStatus(Constants.STATUS_ENABLE);
+		}
+		String[] icon = saveItemImage(iconImage, Constants.PATH_ITEM_ICON);
+		if (icon != null && icon.length == 2) {
+			saveItem.setIconFile(icon[0]);
+			saveItem.setIcon(domain + icon[1]);
+		}
+		if (picId != null && picImage != null && picOrder != null) {
+			if (picId.length == picImage.length && picImage.length == picOrder.length) {
+				List<DsygItemPic> dblist = saveItem.getPicList();
+				List<DsygItemPic> picList = new ArrayList<DsygItemPic>();
+				for (int i = 0; i < picId.length; i++) {
+					long pic_id = picId[i];
+					int pic_order = picOrder[i];
+					MultipartFile pic_img = picImage[i];
+					String[] pic_icon = saveItemImage(pic_img, Constants.PATH_ITEM_PIC_ICON);
+					if (pic_icon != null && pic_icon.length == 2) {
+						DsygItemPic pic = new DsygItemPic();
+						pic.setCreateTime(createTime);
+						pic.setShowOrder(pic_order);
+						pic.setFileUrl(pic_icon[0]);
+						pic.setLinkUrl(domain + pic_icon[1]);
+						picList.add(pic);
+					} else {
+						if (pic_id != 0) {
+							if (dblist != null) {
+								for (DsygItemPic pic : dblist) {
+									if (pic.getId() == pic_id) {
+										pic.setShowOrder(pic_order);
+										picList.add(pic);
+									}
+								}
+							}
+						}
+					}
+				}
+				saveItem.setPicList(picList);
+			}
+		}
+		itemRepository.save(saveItem);
+	}
+
+	private String[] saveItemImage(MultipartFile iconImage, String path) {
+		if (iconImage != null && !iconImage.isEmpty()) {
+			try {
+				String tempName = StringUtils.getUUIDWithOutLine()
+						+ StringUtils.getFileNameExt(iconImage.getOriginalFilename());
+				String tempFile = Constants.getPath(path) + File.separator + tempName;
+				iconImage.transferTo(new File(tempFile));
+				String[] str = new String[2];
+				str[0] = tempFile;
+				str[1] = path + File.separator + tempName;
+				return str;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		return null;
+	}
+
+	public String saveContentImage(MultipartFile iconImage) {
+		String[] str = saveItemImage(iconImage, Constants.PATH_ITEM_CONTENT_ICON);
+		if (str != null && str.length == 2) {
+			return domain + str[1];
+		}
+		return null;
+	}
+
+	public List<DsygPage> getDsygPageByPage(int page) {
+		return pageRepository.getDsygPageByPage(page);
+	}
+
+	public void savePage(int page, int position, long itemId) {
+		DsygPage dsygPage = pageRepository.getDsygPageByPageAndPosition(page, position);
+		if (dsygPage == null) {
+			dsygPage = new DsygPage();
+			dsygPage.setPage(page);
+			dsygPage.setPosition(position);
+		}
+		if (itemId == 0) {
+			dsygPage.setItem(null);
+		} else {
+			dsygPage.setItem(new DsygItem(itemId));
+		}
+		dsygPage.setCreateTime(new Date());
+		pageRepository.save(dsygPage);
+	}
+}

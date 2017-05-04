@@ -1,0 +1,16 @@
+package com.tykj.template.repository.dsyg;
+
+import java.util.List;
+
+import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.stereotype.Repository;
+
+import com.tykj.template.domain.dsyg.DsygPage;
+
+@Repository
+public interface DsygPageRepository extends PagingAndSortingRepository<DsygPage, Long> {
+
+	List<DsygPage> getDsygPageByPage(int page);
+	
+	DsygPage getDsygPageByPageAndPosition(int page,int position);
+}

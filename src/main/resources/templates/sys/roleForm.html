@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="layouts">
+<head>
+<meta name="_csrf" th:content="${_csrf.token}" />
+<meta name="_csrf_header" th:content="${_csrf.headerName}" />
+<title>角色权限</title>
+</head>
+<body>
+	<div layout:fragment="page-heading">
+		<div class="col-lg-8">
+			<h2>角色权限</h2>
+			<ol class="breadcrumb">
+				<li><a href="/index">立</a></li>
+				<li>系统管理</li>
+				<li class="active"><strong>角色权限</strong></li>
+			</ol>
+		</div>
+	</div>
+	<div layout:fragment="page-content">
+		<div class="ibox float-e-margins">
+			<div class="ibox-content">
+				<div class="row">
+					<form id="role_form" name="role_form" method="post"
+						th:action="@{/sys/role/save}" class="form-horizontal"
+						action="roleList.html">
+						<input type="hidden" name="id" value="0" th:value="${role.id }">
+						<div class="dd" id="nestable">
+							<ol class="dd-list" th:each="perm1,st1 : ${perms}">
+								<li class="dd-item" th:data-id="${perm1.id}">
+									<div class="dd-handle">
+										<span class="pull-right" th:text="${perm1.url}"></span> <span
+											th:class="${st1.even}? 'label label-warning' : 'label label-info'"><i
+											th:class="${perm1.icon}"></i></span> <input type="checkbox"
+											th:checked="${perm1.check}" name="perms"
+											th:value="${perm1.id}" th:id="'checkbox'+${perm1.id}">
+										<label th:for="'checkbox'+${perm1.id}">
+											[[${perm1.name}]] </label>
+									</div>
+									<ol class="dd-list" th:if="${#lists.size(perm1.children)} > 0"
+										th:each="perm2,st2 : ${perm1.children}">
+										<li class="dd-item" th:data-id="${perm2.id}">
+											<div class="dd-handle">
+												<span class="pull-right" th:text="${perm2.url}"></span> <span
+													th:class="${st1.even}? 'label label-warning' : 'label label-info'"><i
+													th:class="${perm2.icon}"></i></span> <input type="checkbox"
+													th:checked="${perm2.check}" name="perms"
+													th:value="${perm2.id}" th:id="'checkbox'+${perm2.id}">
+												<label th:for="'checkbox'+${perm2.id}">
+													[[${perm2.name}]] </label>
+											</div>
+											<ol class="dd-list"
+												th:if="${#lists.size(perm2.children)} > 0"
+												th:each="perm3,st3 : ${perm2.children}">
+												<li class="dd-item" th:data-id="${perm3.id}">
+													<div class="dd-handle">
+														<span class="pull-right" th:text="${perm3.url}"></span> <span
+															th:class="${st1.even}? 'label label-warning' : 'label label-info'"><i
+															th:class="${perm3.icon}"></i></span> <input type="checkbox"
+															th:checked="${perm3.check}" name="perms"
+															th:value="${perm3.id}" th:id="'checkbox'+${perm3.id}">
+														<label th:for="'checkbox'+${perm3.id}">
+															[[${perm3.name}]] </label>
+													</div>
+												</li>
+											</ol>
+										</li>
+									</ol>
+								</li>
+							</ol>
+						</div>
+						<div class="form-group">
+							<div class="col-sm-12">
+								<button class="btn btn-primary" type="submit">保存</button>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Page-Level Scripts -->
+	<script layout:fragment="page-script" th:inline="javascript">
+		$(document).ready(function() {
+			/* $('#nestable').nestable({
+			    group: 1
+			}).on('change', updateOutput); */
+		});
+	</script>
+</body>
+</html>

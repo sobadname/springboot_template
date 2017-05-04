@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+	layout:decorate="layouts">
+<head>
+<title>商品详情</title>
+</head>
+<body>
+	<div layout:fragment="page-heading">
+		<div class="col-lg-8">
+			<h2>商品详情</h2>
+			<ol class="breadcrumb">
+				<li><a href="/index">立</a></li>
+				<li>商品管理</li>
+				<li class="active"><strong>商品详情</strong></li>
+			</ol>
+		</div>
+	</div>
+	<div layout:fragment="page-content">
+		<div class="row">
+			<div class="col-lg-12">
+				<div class="ibox product-detail">
+					<div class="ibox-content">
+						<div class="row">
+							<div class="col-md-5">
+								<div class="product-images">
+									<div th:each="pic,pst : ${data.picList}">
+										<div class="image-imitation">
+											<img alt="image" class="img" th:src="@{${pic.linkUrl}}" src="../static/image/profile/profile.jpg" />
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-7">
+								<h2 class="font-bold m-b-xs" th:text="${data.name}"></h2>
+								<div class="m-t-md">
+									<h2 class="product-main-price" th:text="${'$'+data.price}">
+									</h2>
+									<dl class="small m-t-md">
+									<dt>分类</dt>
+									<dd th:text="${data.catalog.name}"></dd>
+									<dt>来源</dt>
+									<dd th:text="${data.stage}"></dd>
+									<dt>创建时间</dt>
+									<dd th:text="${data.createTime}"></dd>
+									</dl>
+								</div>
+								<hr>
+								<div class="m-t-md">
+								<img alt="image" class="img"
+									th:src="@{${data.icon}}" src="../static/image/profile/profile.jpg" />
+								</div>
+								<hr>
+								<h4>描述</h4>
+								<div class="small text-muted" th:utext="${data.content}">
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+<script layout:fragment="page-script" th:inline="javascript">
+$('.product-images').slick({
+    dots: true
+});
+</script>
+</body>
+</html>

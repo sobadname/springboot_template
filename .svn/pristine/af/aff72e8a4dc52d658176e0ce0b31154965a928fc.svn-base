@@ -1,0 +1,28 @@
+package com.tykj.template.web.dsyg;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.tykj.template.domain.dsyg.DsygItem;
+import com.tykj.template.service.dsyg.DsygApiService;
+
+@RestController
+@RequestMapping(value = "/dsyg/api")
+public class DsygApiController {
+
+	@Autowired
+	private DsygApiService apiService;
+	
+	@RequestMapping(value = "/catalog/{id}", method = RequestMethod.GET)
+	public String list(@PathVariable("id") long id) {
+		return "dsyg/itemList";
+	}
+
+
+}
